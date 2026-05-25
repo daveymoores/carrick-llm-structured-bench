@@ -1,0 +1,36 @@
+{
+  "name": "carrick-llm-structured-bench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reproducible benchmark of structured-output behaviour across OpenAI, Anthropic, and Google Gemini.",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "node --test --import tsx test/*.test.ts",
+    "bench": "tsx src/runner.ts",
+    "pilot": "tsx src/runner.ts --phase=pilot",
+    "full": "tsx src/runner.ts --phase=full",
+    "smoke": "tsx src/smoke.ts",
+    "report": "tsx src/report.ts",
+    "examples": "tsx src/examples.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@google/generative-ai": "^0.21.0",
+    "@hyperjump/json-schema": "^1.10.0",
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.1",
+    "dotenv": "^16.4.0",
+    "openai": "^4.70.0",
+    "p-limit": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

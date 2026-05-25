@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+*.log
+dist/
+.DS_Store
+results/**/*.jsonl
+results/**/*.md
+!results/**/SUMMARY.md
+!results/README.md
