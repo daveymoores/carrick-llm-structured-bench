@@ -17,7 +17,9 @@ export async function callAnthropic({ model, schema, schemaName, prompt }: CallA
   const start = Date.now();
   const baseParams = {
     model: model.id,
-    max_tokens: 4096,
+    // 8192 brings Anthropic close to the default ceilings used by OpenAI/Gemini
+    // so long-array schemas (S7) are not truncated by a bench-side config choice.
+    max_tokens: 8192,
     tools: [
       {
         name: TOOL_NAME,

@@ -16,21 +16,37 @@ import { costUsd } from "./models.ts";
 
 type Phase = "pilot" | "full";
 
-function parseArgs(argv: string[]): { phase: Phase; tiersOverride: ModelTier[] | null } {
-  const phaseArg = argv.find((a) => a.startsWith("--phase="));
-  const phase = (phaseArg?.split("=")[1] ?? "pilot") as Phase;
+function parseArgs(argv: string[]): {
+  phase: Phase;
+  tiersOverride: ModelTier[] | null;
+  schemasFilter: Set<string> | null;
+  providersFilter: Set<ProviderId> | null;
+  runsOverride: number | null;
+} {
+  const get = (k: string) => argv.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
+  const phase = (get("phase") ?? "pilot") as Phase;
   if (phase !== "pilot" && phase !== "full") {
     throw new Error(`Unknown phase: ${phase}. Use --phase=pilot or --phase=full.`);
   }
-  const tiersArg = argv.find((a) => a.startsWith("--tiers="));
   let tiersOverride: ModelTier[] | null = null;
-  if (tiersArg) {
-    const raw = tiersArg.split("=")[1] ?? "";
-    const parts = raw.split(",").filter(Boolean);
+  const tiersRaw = get("tiers");
+  if (tiersRaw !== undefined) {
+    const parts = tiersRaw.split(",").filter(Boolean);
     for (const p of parts) if (p !== "flagship" && p !== "cheap") throw new Error(`Unknown tier: ${p}`);
     tiersOverride = parts as ModelTier[];
   }
-  return { phase, tiersOverride };
+  const schemasRaw = get("schemas");
+  const schemasFilter = schemasRaw ? new Set(schemasRaw.split(",").filter(Boolean)) : null;
+  const providersRaw = get("providers");
+  const providersFilter = providersRaw
+    ? new Set(providersRaw.split(",").filter(Boolean) as ProviderId[])
+    : null;
+  const runsRaw = get("runs");
+  const runsOverride = runsRaw ? Number(runsRaw) : null;
+  if (runsOverride !== null && (!Number.isFinite(runsOverride) || runsOverride < 1)) {
+    throw new Error(`Invalid --runs: ${runsRaw}`);
+  }
+  return { phase, tiersOverride, schemasFilter, providersFilter, runsOverride };
 }
 
 function todayStamp(): string {
@@ -41,10 +57,18 @@ function cellId(model: ModelSpec, schema: SchemaSpec, prompt: PromptSpec): strin
   return `${model.provider}__${model.tier}__${schema.id}__${prompt.id}`;
 }
 
-function buildCells(phase: Phase, models: ModelSpec[]): CellSpec[] {
-  const schemas = phase === "pilot" ? PILOT_SCHEMAS : ALL_SCHEMAS;
+function buildCells(
+  phase: Phase,
+  models: ModelSpec[],
+  filters: { schemasFilter: Set<string> | null; runsOverride: number | null },
+): CellSpec[] {
+  const allSchemas = phase === "pilot" ? PILOT_SCHEMAS : ALL_SCHEMAS;
+  const schemas = filters.schemasFilter
+    ? allSchemas.filter((s) => filters.schemasFilter!.has(s.id))
+    : allSchemas;
   const prompts = phase === "pilot" ? PILOT_PROMPTS : PROMPTS;
-  const runs = phase === "pilot" ? 5 : 30;
+  const defaultRuns = phase === "pilot" ? 5 : 30;
+  const runs = filters.runsOverride ?? defaultRuns;
   const cells: CellSpec[] = [];
   for (const model of models) {
     for (const schema of schemas) {
@@ -145,15 +169,16 @@ async function runCell(cell: CellSpec, outPath: string, providerLimits: Record<P
 }
 
 async function main() {
-  const { phase, tiersOverride } = parseArgs(process.argv.slice(2));
+  const { phase, tiersOverride, schemasFilter, providersFilter, runsOverride } = parseArgs(process.argv.slice(2));
   const baseDir = process.env.BENCH_RESULTS_DIR ?? "./results";
   const outDir = join(baseDir, phase, todayStamp());
   await mkdir(outDir, { recursive: true });
 
   const defaultTiers: ModelTier[] = phase === "pilot" ? ["cheap"] : ["flagship", "cheap"];
   const tiers = tiersOverride ?? defaultTiers;
-  const models = loadModels({ tiers });
-  const cells = buildCells(phase, models);
+  let models = loadModels({ tiers });
+  if (providersFilter) models = models.filter((m) => providersFilter.has(m.provider));
+  const cells = buildCells(phase, models, { schemasFilter, runsOverride });
 
   const totalRuns = cells.reduce((sum, c) => sum + c.runs, 0);
   console.log(`Phase: ${phase}`);
