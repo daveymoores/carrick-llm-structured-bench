@@ -4,10 +4,6 @@ A reproducible benchmark of how OpenAI, Anthropic, and Google Gemini behave when
 
 Built to back a write-up on where the three providers actually break, after hitting the failure modes head-on while building [Carrick](https://carrick.tools). The bench is gated by a cheap (~$1) pilot before any full run, so you can verify divergence exists before spending real tokens.
 
-## Status
-
-Pre-release. The pilot has not been run yet.
-
 ## What it measures
 
 For each (provider, model, schema, prompt) cell, every call lands in exactly one outcome bucket:
@@ -43,4 +39,4 @@ See `METHODOLOGY.md` for the schema corpus, prompt design, bucketing rules, and 
 
 ## License
 
-Elastic License 2.0. Copyright (c) 2026 Far Harbour B.V. See `LICENSE`.
+MIT. Copyright (c) 2026 Far Harbour B.V. See `LICENSE`.
