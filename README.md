@@ -2,7 +2,9 @@
 
 A reproducible benchmark of how OpenAI, Anthropic, and Google Gemini behave when asked for structured JSON output.
 
-Built to back a write-up on where the three providers actually break, after hitting the failure modes head-on while building [Carrick](https://carrick.tools). The bench is gated by a cheap (~$1) pilot before any full run, so you can verify divergence exists before spending real tokens.
+Writeup: [Benchmarking LLM Structured Outputs](https://carrick.tools/blog/benchmarking-llm-structured-outputs).
+
+Built to back the writeup after hitting the failure modes head-on while building [Carrick](https://carrick.tools). The bench is gated by a cheap (~$1) pilot before any full run, so you can verify divergence exists before spending real tokens.
 
 ## What it measures
 
